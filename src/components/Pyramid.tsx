@@ -1,13 +1,25 @@
 import type { Person, RoleLevel } from '../types'
-import { LEVEL_COLORS, ROLE_LABELS, ROLE_ORDER } from '../types'
+import { ROLE_LABELS, ROLE_ORDER, STANDING_COLORS, STANDING_LABELS } from '../types'
+import {
+  heatmapColorFromGap,
+  heatmapTextColor,
+} from '../lib/competency'
+
+export type PyramidMode = 'standing' | 'heatmap'
 
 interface PyramidProps {
   people: Person[]
   selectedId: string | null
   onSelect: (person: Person) => void
+  mode?: PyramidMode
 }
 
-export function Pyramid({ people, selectedId, onSelect }: PyramidProps) {
+export function Pyramid({
+  people,
+  selectedId,
+  onSelect,
+  mode = 'standing',
+}: PyramidProps) {
   const tiers = ROLE_ORDER.map((role) => ({
     role,
     members: people.filter((p) => p.role === role),
@@ -20,7 +32,7 @@ export function Pyramid({ people, selectedId, onSelect }: PyramidProps) {
   }
 
   return (
-    <div className="pyramid" role="list">
+    <div className={`pyramid mode-${mode}`} role="list">
       <div className="pyramid-frame">
         {tiers.map(({ role, members }, tierIndex) => (
           <div
@@ -45,23 +57,42 @@ export function Pyramid({ people, selectedId, onSelect }: PyramidProps) {
                     —
                   </div>
                 ) : (
-                  members.map((person, index) => (
-                    <button
-                      key={person.id}
-                      type="button"
-                      className={`person-block ${selectedId === person.id ? 'selected' : ''}`}
-                      style={{
-                        background: LEVEL_COLORS[person.overallLevel],
-                        animationDelay: `${tierIndex * 50 + index * 35}ms`,
-                        flex: `1 1 ${100 / members.length}%`,
-                      }}
-                      onClick={() => onSelect(person)}
-                      title={`${person.name} — ${person.overallLevel} (${person.overallScore.toFixed(2)})`}
-                    >
-                      <span className="person-name">{shortName(person.name)}</span>
-                      <span className="person-level">{person.overallLevel}</span>
-                    </button>
-                  ))
+                  members.map((person, index) => {
+                    const isHeatmap = mode === 'heatmap'
+                    const background = isHeatmap
+                      ? heatmapColorFromGap(person.avgStepsBehind, person.totalCompared)
+                      : STANDING_COLORS[person.standing]
+                    const color = isHeatmap
+                      ? heatmapTextColor(person.avgStepsBehind, person.totalCompared)
+                      : '#fff'
+
+                    return (
+                      <button
+                        key={person.id}
+                        type="button"
+                        className={`person-block ${selectedId === person.id ? 'selected' : ''} ${isHeatmap ? 'heatmap-block' : ''}`}
+                        style={{
+                          background,
+                          color,
+                          animationDelay: `${tierIndex * 50 + index * 35}ms`,
+                          flex: `1 1 ${100 / members.length}%`,
+                        }}
+                        onClick={() => onSelect(person)}
+                        title={
+                          isHeatmap
+                            ? `${person.name} — avg ${person.avgStepsBehind.toFixed(2)} steps behind`
+                            : `${person.name} — ${STANDING_LABELS[person.standing]} (avg ${person.avgStepsBehind.toFixed(2)} behind)`
+                        }
+                      >
+                        <span className="person-name">{shortName(person.name)}</span>
+                        {isHeatmap ? (
+                          <span className="person-metric">{person.avgStepsBehind.toFixed(2)}</span>
+                        ) : (
+                          <span className="person-level">{standingShort(person.standing)}</span>
+                        )}
+                      </button>
+                    )
+                  })
                 )}
               </div>
             </div>
@@ -70,6 +101,19 @@ export function Pyramid({ people, selectedId, onSelect }: PyramidProps) {
       </div>
     </div>
   )
+}
+
+function standingShort(standing: Person['standing']): string {
+  switch (standing) {
+    case 'Meet':
+      return 'On track'
+    case '1-Behind':
+      return '1 behind'
+    case '2-Behind':
+      return '2+ behind'
+    case 'Unknown':
+      return 'No data'
+  }
 }
 
 function shortName(name: string): string {

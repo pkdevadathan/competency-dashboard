@@ -1,6 +1,10 @@
-import type { Person } from '../types'
-import { LEVEL_COLORS } from '../types'
-import { formatScore, groupScoresByCompetency } from '../lib/competency'
+import type { CompetencyLevel, Person } from '../types'
+import { LEVEL_COLORS, STANDING_COLORS, STANDING_LABELS } from '../types'
+import {
+  formatScore,
+  groupScoresByCompetency,
+  stepsBehind,
+} from '../lib/competency'
 
 interface PersonDetailProps {
   person: Person | null
@@ -12,15 +16,15 @@ export function PersonDetail({ person, onClose }: PersonDetailProps) {
     return (
       <aside className="detail-panel empty-detail">
         <h2>Person details</h2>
-        <p>Select someone in the pyramid to see scores and gaps.</p>
+        <p>Select someone in the pyramid to see scores and gaps vs expected.</p>
       </aside>
     )
   }
 
   const groups = groupScoresByCompetency(person.scores)
   const meetPct =
-    person.totalScored > 0
-      ? Math.round((person.meetExpectedCount / person.totalScored) * 100)
+    person.totalCompared > 0
+      ? Math.round((person.meetExpectedCount / person.totalCompared) * 100)
       : 0
 
   return (
@@ -39,24 +43,46 @@ export function PersonDetail({ person, onClose }: PersonDetailProps) {
       </div>
 
       <div className="detail-stats">
+        <div className="stat-card skill-compare">
+          <span className="stat-label">Expected vs current skill</span>
+          <div className="skill-compare-row">
+            <div className="skill-side">
+              <span className="skill-side-label">Expected</span>
+              <strong style={{ color: LEVEL_COLORS[person.expectedLevel] }}>
+                {person.expectedLevel}
+              </strong>
+              <span className="stat-sub">{formatScore(person.expectedScore)}</span>
+            </div>
+            <span className="skill-arrow" aria-hidden>
+              →
+            </span>
+            <div className="skill-side">
+              <span className="skill-side-label">Current</span>
+              <strong style={{ color: LEVEL_COLORS[person.overallLevel] }}>
+                {person.overallLevel}
+              </strong>
+              <span className="stat-sub">{formatScore(person.overallScore)}</span>
+            </div>
+          </div>
+        </div>
         <div
           className="stat-card level-card"
-          style={{ borderColor: LEVEL_COLORS[person.overallLevel] }}
+          style={{ borderColor: STANDING_COLORS[person.standing] }}
         >
-          <span className="stat-label">Overall competency</span>
-          <strong style={{ color: LEVEL_COLORS[person.overallLevel] }}>
-            {person.overallLevel}
+          <span className="stat-label">Vs expected</span>
+          <strong style={{ color: STANDING_COLORS[person.standing] }}>
+            {STANDING_LABELS[person.standing]}
           </strong>
           <span className="stat-sub">
-            Score {formatScore(person.overallScore)} (1–3 weighted avg)
+            Avg {formatScore(person.avgStepsBehind)} steps behind · {meetPct}% meet
           </span>
         </div>
         <div className="stat-card">
-          <span className="stat-label">Meets expected</span>
-          <strong>{meetPct}%</strong>
-          <span className="stat-sub">
-            {person.meetExpectedCount}/{person.totalScored} sub-competencies
-          </span>
+          <span className="stat-label">Gap breakdown</span>
+          <strong>
+            {person.meetExpectedCount} / {person.oneBehindCount} / {person.twoPlusBehindCount}
+          </strong>
+          <span className="stat-sub">meet · one behind · two+ behind</span>
         </div>
       </div>
 
@@ -68,23 +94,52 @@ export function PersonDetail({ person, onClose }: PersonDetailProps) {
               <span>{scores.length}</span>
             </summary>
             <ul>
-              {scores.map((score) => (
-                <li key={`${group}-${score.subCompetency}`}>
-                  <div className="sub-name">
-                    <span>{score.subCompetency}</span>
-                    <span className="weight-chip">w {score.weight}</span>
-                  </div>
-                  <div className="level-pills">
-                    <LevelPill label="Exp" level={score.expected} />
-                    <LevelPill label="Actual" level={score.actual} emphasize />
-                  </div>
-                </li>
-              ))}
+              {scores.map((score) => {
+                const behind = stepsBehind(score.expected, score.actual)
+                return (
+                  <li key={`${group}-${score.subCompetency}`}>
+                    <div className="sub-name">
+                      <span>{score.subCompetency}</span>
+                      <span className="weight-chip">w {score.weight}</span>
+                    </div>
+                    <div className="level-pills">
+                      <LevelPill label="Exp" level={score.expected} />
+                      <LevelPill label="Actual" level={score.actual} emphasize />
+                      <GapPill behind={behind} />
+                    </div>
+                  </li>
+                )
+              })}
             </ul>
           </details>
         ))}
       </div>
     </aside>
+  )
+}
+
+function GapPill({ behind }: { behind: number | null }) {
+  if (behind == null) {
+    return <span className="level-pill muted-pill">Gap: —</span>
+  }
+  if (behind === 0) {
+    return (
+      <span className="level-pill" style={{ background: STANDING_COLORS.Meet }}>
+        On track
+      </span>
+    )
+  }
+  if (behind === 1) {
+    return (
+      <span className="level-pill" style={{ background: STANDING_COLORS['1-Behind'] }}>
+        1 behind
+      </span>
+    )
+  }
+  return (
+    <span className="level-pill" style={{ background: STANDING_COLORS['2-Behind'] }}>
+      {behind}+ behind
+    </span>
   )
 }
 
@@ -94,7 +149,7 @@ function LevelPill({
   emphasize = false,
 }: {
   label: string
-  level: string | null
+  level: CompetencyLevel | null
   emphasize?: boolean
 }) {
   if (!level) {
@@ -108,7 +163,7 @@ function LevelPill({
   return (
     <span
       className={`level-pill ${emphasize ? 'emphasize' : ''}`}
-      style={{ background: LEVEL_COLORS[level as keyof typeof LEVEL_COLORS] }}
+      style={{ background: LEVEL_COLORS[level] }}
     >
       {label}: {level}
     </span>
