@@ -129,9 +129,6 @@ export default function App() {
             </div>
 
             <div className="pyramid-slide" data-view="heatmap">
-              <p className="slide-caption">
-                Continuous gap heatmap — number = avg steps behind Expected
-              </p>
               <div className="heatmap-legend" aria-hidden>
                 <span>0.00</span>
                 <div className="heatmap-legend-bar" />
