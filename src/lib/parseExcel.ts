@@ -1,6 +1,6 @@
 import * as XLSX from 'xlsx'
 import type { ParsedWorkbook, Person, SubCompetencyScore } from '../types'
-import { computeWeightedLevel, gapStats, parseLevel, parseWeight } from './competency'
+import { computeWeightedLevel, gapStats, parseLevel, parseWeight, standingFromGap } from './competency'
 import { inferRole, splitNameAndExperience } from './roles'
 
 const PREFERRED_SHEETS = ['OFH_Competancy', 'OFH_Competency', 'STLA']
@@ -116,6 +116,7 @@ export function parseCompetencyWorkbook(data: ArrayBuffer): ParsedWorkbook {
     const actual = computeWeightedLevel(scores, 'actual')
     const expected = computeWeightedLevel(scores, 'expected')
     const gaps = gapStats(scores)
+    const scoreGap = expected.score - actual.score
 
     return {
       id: `${name}-${col}`,
@@ -127,8 +128,8 @@ export function parseCompetencyWorkbook(data: ArrayBuffer): ParsedWorkbook {
       expectedScore: expected.score,
       overallLevel: actual.level,
       overallScore: actual.score,
-      standing: gaps.standing,
-      avgStepsBehind: gaps.avgStepsBehind,
+      standing: standingFromGap(scoreGap, gaps.totalCompared),
+      scoreGap,
       meetExpectedCount: gaps.meetExpectedCount,
       oneBehindCount: gaps.oneBehindCount,
       twoPlusBehindCount: gaps.twoPlusBehindCount,

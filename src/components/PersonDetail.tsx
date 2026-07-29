@@ -74,7 +74,7 @@ export function PersonDetail({ person, onClose }: PersonDetailProps) {
             {STANDING_LABELS[person.standing]}
           </strong>
           <span className="stat-sub">
-            Avg {formatScore(person.avgStepsBehind)} steps behind · {meetPct}% meet
+            Expected − Current = {formatScore(person.scoreGap)} · {meetPct}% meet
           </span>
         </div>
         <div className="stat-card">

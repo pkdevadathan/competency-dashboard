@@ -60,10 +60,10 @@ export function Pyramid({
                   members.map((person, index) => {
                     const isHeatmap = mode === 'heatmap'
                     const background = isHeatmap
-                      ? heatmapColorFromGap(person.avgStepsBehind, person.totalCompared)
+                      ? heatmapColorFromGap(person.scoreGap, person.totalCompared)
                       : STANDING_COLORS[person.standing]
                     const color = isHeatmap
-                      ? heatmapTextColor(person.avgStepsBehind, person.totalCompared)
+                      ? heatmapTextColor(person.scoreGap, person.totalCompared)
                       : '#fff'
 
                     return (
@@ -80,13 +80,13 @@ export function Pyramid({
                         onClick={() => onSelect(person)}
                         title={
                           isHeatmap
-                            ? `${person.name} — avg ${person.avgStepsBehind.toFixed(2)} steps behind`
-                            : `${person.name} — ${STANDING_LABELS[person.standing]} (avg ${person.avgStepsBehind.toFixed(2)} behind)`
+                            ? `${person.name} — Expected ${person.expectedScore.toFixed(2)} − Current ${person.overallScore.toFixed(2)} = ${person.scoreGap.toFixed(2)}`
+                            : `${person.name} — ${STANDING_LABELS[person.standing]} (Expected − Current = ${person.scoreGap.toFixed(2)})`
                         }
                       >
                         <span className="person-name">{shortName(person.name)}</span>
                         {isHeatmap ? (
-                          <span className="person-metric">{person.avgStepsBehind.toFixed(2)}</span>
+                          <span className="person-metric">{person.scoreGap.toFixed(2)}</span>
                         ) : (
                           <span className="person-level">{standingShort(person.standing)}</span>
                         )}

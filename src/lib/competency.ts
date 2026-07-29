@@ -42,20 +42,20 @@ export function levelFromScore(score: number): CompetencyLevel {
 }
 
 /**
- * Role-relative standing from weighted average steps behind Expected.
+ * Standing from Expected avg − Current avg.
  * Practical thirds on the 0–1 gap range (where most people sit).
  */
-export function standingFromGap(avgStepsBehind: number, compared: number): Standing {
+export function standingFromGap(scoreGap: number, compared: number): Standing {
   if (compared === 0) return 'Unknown'
-  if (avgStepsBehind < 0.33) return 'Meet'
-  if (avgStepsBehind < 0.67) return '1-Behind'
+  if (scoreGap < 0.33) return 'Meet'
+  if (scoreGap < 0.67) return '1-Behind'
   return '2-Behind'
 }
 
-/** Blend green → amber → red from avg steps behind (0 = best, 1+ = worst). */
-export function heatmapColorFromGap(avgStepsBehind: number, compared: number): string {
+/** Blend green → amber → red from Expected − Current (0 = best, 1+ = worst). */
+export function heatmapColorFromGap(scoreGap: number, compared: number): string {
   if (compared === 0) return '#6b7280'
-  const t = Math.min(1, Math.max(0, avgStepsBehind))
+  const t = Math.min(1, Math.max(0, scoreGap))
   if (t <= 0.5) {
     return mixHex('#2e7d32', '#f0a202', t / 0.5)
   }
@@ -80,10 +80,9 @@ function toHex(n: number): string {
 }
 
 /** Prefer dark text on light/amber cells for heatmap readability. */
-export function heatmapTextColor(avgStepsBehind: number, compared: number): string {
+export function heatmapTextColor(scoreGap: number, compared: number): string {
   if (compared === 0) return '#fff'
-  // Mid amber is bright — use dark ink there
-  if (avgStepsBehind > 0.25 && avgStepsBehind < 0.75) return '#132229'
+  if (scoreGap > 0.25 && scoreGap < 0.75) return '#132229'
   return '#fff'
 }
 
@@ -143,39 +142,30 @@ export function computeOverall(scores: SubCompetencyScore[]) {
 }
 
 /**
- * Gap vs Expected (weighted). This is what should judge juniors fairly:
- * Expected L2 + Actual L1 = 1 behind; Expected L3 + Actual L1 = 2 behind.
+ * Row-level gap counts (meet / 1 behind / 2+).
+ * Pyramid number/color uses Expected avg − Current avg instead.
  */
 export function gapStats(scores: SubCompetencyScore[]) {
   let meetExpectedCount = 0
   let oneBehindCount = 0
   let twoPlusBehindCount = 0
   let totalCompared = 0
-  let weightedBehind = 0
-  let weightTotal = 0
 
   for (const row of scores) {
     const behind = stepsBehind(row.expected, row.actual)
     if (behind == null) continue
 
     totalCompared += 1
-    weightedBehind += behind * row.weight
-    weightTotal += row.weight
-
     if (behind === 0) meetExpectedCount += 1
     else if (behind === 1) oneBehindCount += 1
     else twoPlusBehindCount += 1
   }
-
-  const avgStepsBehind = weightTotal === 0 ? 0 : weightedBehind / weightTotal
 
   return {
     meetExpectedCount,
     oneBehindCount,
     twoPlusBehindCount,
     totalCompared,
-    avgStepsBehind,
-    standing: standingFromGap(avgStepsBehind, totalCompared),
   }
 }
 
@@ -183,6 +173,7 @@ export function withRecomputedPerson(person: Person): Person {
   const actual = computeWeightedLevel(person.scores, 'actual')
   const expected = computeWeightedLevel(person.scores, 'expected')
   const gaps = gapStats(person.scores)
+  const scoreGap = expected.score - actual.score
   return {
     ...person,
     expectedLevel: expected.level,
@@ -190,8 +181,8 @@ export function withRecomputedPerson(person: Person): Person {
     overallLevel: actual.level,
     overallScore: actual.score,
     totalScored: actual.totalScored,
-    standing: gaps.standing,
-    avgStepsBehind: gaps.avgStepsBehind,
+    scoreGap,
+    standing: standingFromGap(scoreGap, gaps.totalCompared),
     meetExpectedCount: gaps.meetExpectedCount,
     oneBehindCount: gaps.oneBehindCount,
     twoPlusBehindCount: gaps.twoPlusBehindCount,

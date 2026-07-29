@@ -33,7 +33,8 @@ export interface Person {
   overallScore: number
   /** Role-relative health from Expected vs Actual. Drives pyramid color. */
   standing: Standing
-  avgStepsBehind: number
+  /** Expected avg − Current avg (same numbers shown in the detail panel). */
+  scoreGap: number
   meetExpectedCount: number
   oneBehindCount: number
   twoPlusBehindCount: number
