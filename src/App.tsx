@@ -9,7 +9,7 @@ import {
 import type { Person } from './types'
 import './App.css'
 
-const SAMPLE_URL = '/data/OFH_Competancy.xlsm'
+const SAMPLE_URL = `${import.meta.env.BASE_URL}data/OFH_Competancy.xlsm`
 
 export default function App() {
   const [people, setPeople] = useState<Person[]>([])

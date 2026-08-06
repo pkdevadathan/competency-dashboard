@@ -48,9 +48,7 @@ export function PersonDetail({ person, onClose }: PersonDetailProps) {
           <div className="skill-compare-row">
             <div className="skill-side">
               <span className="skill-side-label">Expected</span>
-              <strong style={{ color: LEVEL_COLORS[person.expectedLevel] }}>
-                {person.expectedLevel}
-              </strong>
+              <strong>{person.expectedLevel}</strong>
               <span className="stat-sub">{formatScore(person.expectedScore)}</span>
             </div>
             <span className="skill-arrow" aria-hidden>
@@ -58,9 +56,7 @@ export function PersonDetail({ person, onClose }: PersonDetailProps) {
             </span>
             <div className="skill-side">
               <span className="skill-side-label">Current</span>
-              <strong style={{ color: LEVEL_COLORS[person.overallLevel] }}>
-                {person.overallLevel}
-              </strong>
+              <strong>{person.overallLevel}</strong>
               <span className="stat-sub">{formatScore(person.overallScore)}</span>
             </div>
           </div>
@@ -103,7 +99,7 @@ export function PersonDetail({ person, onClose }: PersonDetailProps) {
                       <span className="weight-chip">w {score.weight}</span>
                     </div>
                     <div className="level-pills">
-                      <LevelPill label="Exp" level={score.expected} />
+                      <LevelPill label="Exp" level={score.expected} neutral />
                       <LevelPill label="Actual" level={score.actual} emphasize />
                       <GapPill behind={behind} />
                     </div>
@@ -147,10 +143,13 @@ function LevelPill({
   label,
   level,
   emphasize = false,
+  neutral = false,
 }: {
   label: string
   level: CompetencyLevel | null
   emphasize?: boolean
+  /** A target level is not good or bad on its own, so render it uncolored. */
+  neutral?: boolean
 }) {
   if (!level) {
     return (
@@ -158,6 +157,10 @@ function LevelPill({
         {label}: —
       </span>
     )
+  }
+
+  if (neutral) {
+    return <span className="level-pill neutral-pill">{label}: {level}</span>
   }
 
   return (

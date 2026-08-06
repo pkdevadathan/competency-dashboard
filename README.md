@@ -1,8 +1,8 @@
 # OFH Competency Dashboard
 
-Interactive team competency pyramid built with **React + TypeScript + Vite**.
+Interactive team competency pyramid built with **React + TypeScript + Vite**. Also ships as a **desktop app** (Electron) you can zip and share — no Azure hosting or Entra login.
 
-## Run locally
+## Run locally (browser)
 
 ```bash
 npm install
@@ -10,6 +10,38 @@ npm run dev
 ```
 
 Open the URL Vite prints (usually `http://localhost:5173`).
+
+## Desktop app (Windows only)
+
+Share a Windows GUI with teammates — no Azure hosting or Entra login.
+
+### Dev (Electron + Vite hot reload)
+
+```bash
+npm install
+npm run electron:dev
+```
+
+### Build the Windows tool
+
+You can run this from a Mac; it still produces Windows x64 artifacts:
+
+```bash
+npm run electron:build:win
+```
+
+Outputs under `release/`:
+
+- `Team Pyramid-*-Windows-Portable.exe` — double-click, no install
+- `Team Pyramid-*-Windows.zip` — unzip and run
+
+Put that file on SharePoint / Teams. Stakeholders:
+
+1. Download / unzip the app
+2. Download the latest Excel from SharePoint (in the browser)
+3. Open **Team Pyramid** → **Upload Excel** (or drag-drop the `.xlsm`)
+
+> IT note: unsigned `.exe` may be blocked by SmartScreen / allowlists. Ask early if you need code signing or an IT-approved distribution path.
 
 ## What it does
 
